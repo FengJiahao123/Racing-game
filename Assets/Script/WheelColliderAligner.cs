@@ -1,6 +1,5 @@
 using UnityEngine;
 
-[ExecuteInEditMode] // 使得脚本在编辑模式下也能执行
 public class WheelColliderAligner : MonoBehaviour
 {
     [Header("拖入引用")]
@@ -12,8 +11,16 @@ public class WheelColliderAligner : MonoBehaviour
     public Color modelCenterColor = Color.green; // 轮子模型中心颜色
     public Color colliderPosColor = Color.red;   // WheelCollider位置颜色
 
-    // 更新轮子和WheelCollider对齐
-    void Update()
+    private bool hasBeenAligned = false; // 标记是否已进行过对齐
+
+    // 在开始时进行对齐计算
+    void Start()
+    {
+        AlignWheelCollider(); // 在开始时调用一次对齐函数
+    }
+
+    // 只在初始化时计算一次，避免每帧都更新
+    void AlignWheelCollider()
     {
         if (wheelModel == null || wheelCollider == null) return;
 
@@ -34,11 +41,27 @@ public class WheelColliderAligner : MonoBehaviour
         // 使用正值来修正Y轴偏移，使得WheelCollider的位置与模型几何中心对齐
         colliderCenter.y = colliderCenter.y + wheelCollider.suspensionDistance / 2f; // 修正Y轴值
 
+        // 修复：确保 x 和 z 坐标对齐，避免偏移
+        colliderCenter.x = Mathf.Round(colliderCenter.x * 100f) / 100f; // 保留两位小数
+        colliderCenter.z = Mathf.Round(colliderCenter.z * 100f) / 100f; // 保留两位小数
+
         // 应用修正后的Center
         wheelCollider.center = colliderCenter;
 
         // 自动计算完美半径（取模型高度作为半径）
-        wheelCollider.radius = bounds.extents.y;
+        wheelCollider.radius = Mathf.Round(bounds.extents.y * 100f) / 100f; // 保留两位小数
+
+        hasBeenAligned = true; // 对齐完成后标记
+    }
+
+    // 如果需要可以通过按钮或其他条件重新计算对齐
+    void OnValidate()
+    {
+        // 如果脚本中有需要重新对齐的条件（例如手动修改了属性）
+        if (!hasBeenAligned)
+        {
+            AlignWheelCollider(); // 仅在尚未对齐时进行对齐
+        }
     }
 
     // 绘制调试信息

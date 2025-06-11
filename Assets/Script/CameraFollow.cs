@@ -9,7 +9,7 @@ public class CameraFollow : MonoBehaviour
     }
 
     [Header("基础设置")]
-    public Transform target;                      // 赛车目标
+    public Transform target;                      // 玩家车辆的目标
     public Vector3 offset = new Vector3(0, 3, -6); // 相机相对偏移
     public FollowMode mode = FollowMode.SmoothDamp; // 跟随模式
 
@@ -34,14 +34,33 @@ public class CameraFollow : MonoBehaviour
         Application.targetFrameRate = 144;
     }
 
+    void Start()
+    {
+        // 如果没有手动设置目标车辆，自动查找带 "Player" 标签的车辆
+        if (target == null)
+        {
+            GameObject player = GameObject.FindWithTag("Player");
+            if (player != null)
+            {
+                target = player.transform;  // 将目标设置为玩家选择的车辆
+            }
+        }
+
+        // 如果没有找到玩家车辆，输出警告
+        if (target == null)
+        {
+            Debug.LogWarning("Player vehicle not found. Make sure the vehicle has 'Player' tag.");
+        }
+    }
+
     void LateUpdate()
     {
-        if (target == null) return;
+        if (target == null) return;  // 如果没有目标，就退出更新
 
-        // 1. 计算目标位置（含偏移）
+        // 计算目标位置（包含偏移量）
         Vector3 desiredPosition = target.TransformPoint(offset);
 
-        // 2. 根据模式更新相机位置
+        // 根据模式更新相机位置
         switch (mode)
         {
             case FollowMode.SpringPhysics:
@@ -66,7 +85,7 @@ public class CameraFollow : MonoBehaviour
                 break;
         }
 
-        // 3. 计算目标旋转方向
+        // 计算目标旋转方向
         Vector3 lookDirection = target.forward;
         if (lookAhead)
         {
