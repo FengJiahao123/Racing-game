@@ -3,10 +3,10 @@ using UnityEngine;
 [RequireComponent(typeof(Collider))]
 public class Checkpoint : MonoBehaviour
 {
-    [Tooltip("唯一 ID，从 0 开始")]
+    [Tooltip("Unique ID, starting from 0")]
     public int id;
 
-    [Tooltip("触发此节点后，下一步可触发的节点 ID 列表")]
+    [Tooltip("List of the next checkpoint IDs that can be triggered after this one")]
     public int[] nextIds;
 
     private bool triggered = false;
@@ -15,22 +15,22 @@ public class Checkpoint : MonoBehaviour
     {
         if (!other.CompareTag("Player")) return;
 
-        // 如果尚未标记本次进入
+        // If this entry has not been marked yet
         if (!triggered)
         {
-            // 尝试合法通过
+            // Try to pass the checkpoint legally
             bool passed = RaceManager.Instance.TryPassCheckpoint(id);
             if (passed)
             {
-                // 合法通过，标记避免本次重复
+                // Passed legally, mark to prevent repeat entry
                 triggered = true;
             }
             else if (RaceManager.Instance.IsVisitedInCurrentLap(id))
             {
-                // 不在 nextAllowed 且已访问 => 逆行
+                // Not allowed in nextAllowed and already visited => reverse direction
                 RaceManager.Instance.HandleIllegalReverse(id, other.gameObject);
             }
-            // 既不合法也未访问，则是跨点或乱触发，直接忽略，不算逆行
+            // If neither legal nor visited, it's a checkpoint skip or mis-trigger, simply ignore it, not considered reverse
         }
     }
 

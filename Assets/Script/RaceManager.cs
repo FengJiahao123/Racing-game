@@ -6,15 +6,15 @@ public class RaceManager : MonoBehaviour
 {
     public static RaceManager Instance { get; private set; }
 
-    [Header("比赛设置")]
+    [Header("Race Settings")]
     public int TotalLaps = 3;
-    [Header("延迟显隐秒数")]
+    [Header("Delay Seconds for Show/Hide")]
     public float checkpointDelay = 1.5f;
-    [Header("可视检查点对象")]
+    [Header("Visible Checkpoint Object")]
     public GameObject postLapCheckpoint;
-    [Header("所有 Checkpoint 脚本")]
+    [Header("All Checkpoint Scripts")]
     public Checkpoint[] allCheckpoints;
-    [Header("起点/终点 ID")]
+    [Header("Start/Finish ID")]
     public int startFinishId = 0;
 
     public int CurrentLap => Mathf.Max(0, crossCount - 1);
@@ -24,7 +24,7 @@ public class RaceManager : MonoBehaviour
     private HashSet<int> nextAllowed = new HashSet<int>();
     private HashSet<int> visitedThisLap = new HashSet<int>();
 
-    // —— 新增：UI 提示用
+    // —— New: For UI prompts
     private string warningMessage = "";
     private float warningTimer = 0f;
 
@@ -46,7 +46,7 @@ public class RaceManager : MonoBehaviour
 
     private void Update()
     {
-        // 警告倒计时
+        // Warning countdown
         if (warningTimer > 0f)
             warningTimer -= Time.deltaTime;
     }
@@ -55,20 +55,20 @@ public class RaceManager : MonoBehaviour
     {
         if (warningTimer > 0f && !string.IsNullOrEmpty(warningMessage))
         {
-            // 新建一个 GUIStyle 让文字居中、字号合适
+            // Create a new GUIStyle to center the text and set the font size
             GUIStyle style = new GUIStyle(GUI.skin.label)
             {
                 alignment = TextAnchor.MiddleCenter,
                 fontSize = 32
             };
-            // 矩形宽度撑满屏幕，高度 50，垂直居中
+            // Set the rectangle width to fill the screen, height 50, vertically centered
             Rect rect = new Rect(0, Screen.height / 2 - 25, Screen.width, 50);
             GUI.Label(rect, warningMessage, style);
         }
     }
 
     /// <summary>
-    /// 外部调用：显示一条屏幕中间的警告文字，2 秒后自动消失
+    /// External call: Displays a warning message in the center of the screen, which disappears automatically after 2 seconds.
     /// </summary>
     public void ShowWarning(string msg)
     {
@@ -84,7 +84,7 @@ public class RaceManager : MonoBehaviour
         if (id == startFinishId)
         {
             crossCount++;
-            Debug.Log($"[RaceManager] 过线次数：{crossCount}，已完成圈数：{CurrentLap}/{TotalLaps}");
+            Debug.Log($"[RaceManager] Crossing count: {crossCount}, Completed laps: {CurrentLap}/{TotalLaps}");
 
             if (crossCount == 1 && postLapCheckpoint != null)
                 StartCoroutine(DelayedSetActive(postLapCheckpoint, false, checkpointDelay));
@@ -93,13 +93,13 @@ public class RaceManager : MonoBehaviour
             else if (CurrentLap >= TotalLaps)
                 OnRaceCompleted?.Invoke();
 
-            // 新一圈开始，清空已访问集合
+            // New lap starts, clear the visited set
             visitedThisLap.Clear();
         }
 
         visitedThisLap.Add(id);
 
-        // 更新下一步允许集合
+        // Update the next allowed set
         var cp = System.Array.Find(allCheckpoints, c => c.id == id);
         nextAllowed = new HashSet<int>(cp.nextIds);
 
@@ -110,9 +110,9 @@ public class RaceManager : MonoBehaviour
 
     public void HandleIllegalReverse(int id, GameObject car)
     {
-        Debug.LogWarning("[RaceManager] 检测到逆行，已强制纠正！");
+        Debug.LogWarning("[RaceManager] Reverse movement detected, forced correction!");
 
-        // 停车
+        // Stop the car
         var rb = car.GetComponent<Rigidbody>();
         if (rb != null)
         {
@@ -120,10 +120,10 @@ public class RaceManager : MonoBehaviour
             rb.angularVelocity = Vector3.zero;
         }
 
-        // 弹 UI 警告
-        ShowWarning("禁止逆行！");
+        // Trigger UI warning
+        ShowWarning("Reverse movement is prohibited!");
 
-        // 瞬移并朝向
+        // Teleport and face the correct direction
         var cp = System.Array.Find(allCheckpoints, c => c.id == id);
         if (cp != null)
         {

@@ -5,33 +5,33 @@ using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
-    [Header("车辆生成与UI引用")]
-    public Transform spawnPoint;          // 玩家车辆的生成位置
-    public Transform aiSpawnPoint;        // AI 车辆的生成位置
-    public GameObject[] carPrefabs;      // 玩家车和AI车的预制体
-    public TextMeshProUGUI countdownText;    // 倒计时文本
-    public TextMeshProUGUI gameTimeText;      // 游戏时间文本
-    public TextMeshProUGUI lapText;          // 显示当前圈数的文本
-    public TextMeshProUGUI speedText;        // 显示速度的文本
+    [Header("Vehicle Spawning and UI References")]
+    public Transform spawnPoint;          // Player vehicle spawn position
+    public Transform aiSpawnPoint;        // AI vehicle spawn position
+    public GameObject[] carPrefabs;      // Player and AI vehicle prefabs
+    public TextMeshProUGUI countdownText;    // Countdown text
+    public TextMeshProUGUI gameTimeText;      // Game time text
+    public TextMeshProUGUI lapText;          // Current lap display text
+    public TextMeshProUGUI speedText;        // Speed display text
     public float speed = 0;
-    [Header("比赛结束 UI")]
-    [Tooltip("跑完所需圈数后显示的结束面板")]
-    public GameObject finishPanel;            // 在 Inspector 中拖入结束面板
-    public TextMeshProUGUI finishTimeText;    // 显示“恭喜你 用时 xx:xx:xxx”
-    public Button restartButton;              // 再来一局按钮
-    public Button mainMenuButton;             // 回主菜单按钮
+    [Header("End Race UI")]
+    [Tooltip("End panel displayed after completing required laps")]
+    public GameObject finishPanel;            // Drag the end panel into the Inspector
+    public TextMeshProUGUI finishTimeText;    // Display "Congratulations! Time: xx:xx:xxx"
+    public Button restartButton;              // Restart button
+    public Button mainMenuButton;             // Main menu button
 
-    private float countdownTime = 5f;         // 倒计时时长
-    private bool countdownActive = false;     // 是否倒计时中
-    private GameObject playerCar;             // 玩家车辆
-    private bool canControlCar = false;       // 是否允许玩家控制
-    private float gameTime = 0f;              // 已经过的游戏时间
-    public bool raceEnded = false;           // 比赛是否已经结束
-    private CarController carController;      // 引用玩家的 CarController
-                                              // 手动指定路径点
-    public Transform[] waypoints;  // 将路径点数组公开，手动拖入 Inspector
+    private float countdownTime = 5f;         // Countdown duration
+    private bool countdownActive = false;     // Is countdown active
+    private GameObject playerCar;             // Player vehicle
+    private bool canControlCar = false;       // Whether the player can control the car
+    private float gameTime = 0f;              // Elapsed game time
+    public bool raceEnded = false;           // Has the race ended
+    private CarController carController;      // Reference to the player's CarController
+                                              // Manually specify the waypoints
+    public Transform[] waypoints;  // Expose waypoints array and manually drag into the Inspector
 
-    private RaceManager raceManager;          // 用来监听比赛结束事件
+    private RaceManager raceManager;          // Used to listen to the race end event
 
     public GameObject PlayerCar
     {
@@ -40,55 +40,55 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
-        // 1. 生成玩家车辆
+        // 1. Spawn the player vehicle
         int selectedCar = PlayerPrefs.GetInt("SelectedCarIndex", 0);
         playerCar = Instantiate(carPrefabs[selectedCar], spawnPoint.position, spawnPoint.rotation);
 
-        // 给玩家车辆打上 Tag="Player"
+        // Tag the player vehicle as "Player"
         playerCar.tag = "Player";
-        // 将根节点 Layer 设置为 "Player"
+        // Set the root node Layer to "Player"
         int playerLayerIndex = LayerMask.NameToLayer("Player");
         playerCar.layer = playerLayerIndex;
 
-        // 2. 通过代码生成 AI 车，使用 aiSpawnPoint 位置
-        if (carPrefabs.Length > 2)  // 假设 carPrefabs[2] 是 AI 车
+        // 2. Spawn AI vehicles through code, using aiSpawnPoint position
+        if (carPrefabs.Length > 2)  // Assume carPrefabs[2] is the AI vehicle
         {
             GameObject aiCar = Instantiate(carPrefabs[2], aiSpawnPoint.position, aiSpawnPoint.rotation);
-            aiCar.tag = "AI";  // 设置为 AI 车辆 Tag
+            aiCar.tag = "AI";  // Set AI vehicle tag
             aiCar.layer = LayerMask.NameToLayer("AI");
-            // 给 AI 车添加控制脚本
+            // Add control script to the AI vehicle
             AIInput aiInput = aiCar.GetComponent<AIInput>();
             if (aiInput != null)
             {
-                // 动态获取路径点并赋值给 AIInput
-                aiInput.waypoints = waypoints;  // 获取所有路径点
+                // Dynamically get waypoints and assign to AIInput
+                aiInput.waypoints = waypoints;  // Get all waypoints
             }
-            // 禁用 AI 车的 CarController，直到倒计时结束后启用
+            // Disable AI vehicle's CarController until the countdown is over
             CarController aiCarController = aiCar.GetComponent<CarController>();
             if (aiCarController != null)
             {
-                aiCarController.enabled = false;  // 禁用 AI 车的控制
+                aiCarController.enabled = false;  // Disable AI vehicle control
             }
         }
-        // 2. 获取车辆的 CarController 组件
+        // 2. Get the CarController component of the vehicle
         carController = playerCar.GetComponent<CarController>();
 
-        // 3. 让主摄像机跟随玩家车辆
+        // 3. Make the main camera follow the player vehicle
         CameraFollow cameraFollow = Camera.main.GetComponent<CameraFollow>();
         if (cameraFollow != null)
         {
             cameraFollow.target = playerCar.transform;
         }
 
-        // 4. 初始阶段不允许玩家控制
+        // 4. Initially disallow player control
         canControlCar = false;
         raceEnded = false;
 
-        // 5. 一开始就启动倒计时
+        // 5. Start the countdown right away
         countdownActive = true;
         countdownText.gameObject.SetActive(true);
 
-        // 6. 找到 RaceManager 幯订阅比赛结束事件
+        // 6. Find RaceManager and subscribe to the race end event
         raceManager = FindObjectOfType<RaceManager>();
         if (raceManager != null)
         {
@@ -96,22 +96,22 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("[GameManager] 未找到 RaceManager，比赛结束将无法触发。");
+            Debug.LogWarning("[GameManager] RaceManager not found, race end will not be triggered.");
         }
 
-        // 7. 确保结束面板初始隐藏
+        // 7. Ensure the finish panel is initially hidden
         if (finishPanel != null)
         {
             finishPanel.SetActive(false);
         }
 
-        // 8. 隐藏游戏时间文本
+        // 8. Hide the game time text
         if (gameTimeText != null)
         {
             gameTimeText.gameObject.SetActive(false);
         }
 
-        // 9. 给按钮绑定回调
+        // 9. Bind button callbacks
         if (restartButton != null)
             restartButton.onClick.AddListener(OnRestartButtonClicked);
         if (mainMenuButton != null)
@@ -120,7 +120,7 @@ public class GameManager : MonoBehaviour
 
     void Update()
     {
-        // 1. 倒计时阶段
+        // 1. Countdown phase
         if (countdownActive && !raceEnded)
         {
             countdownTime -= Time.deltaTime;
@@ -134,21 +134,21 @@ public class GameManager : MonoBehaviour
 
                 canControlCar = true;
                 StartGameTimer();
-                // 倒计时结束后启用 AI 车的控制
+                // After the countdown ends, enable AI vehicle control
                 EnableAIControl();
             }
         }
 
-        // 2. 如果未倒计时且尚未开始控制，按空格可重新启动倒计时（比赛未结束时）
+        // 2. If no countdown is active and control hasn't started, press space to restart the countdown (if the race isn't over)
         if (!countdownActive && !canControlCar && !raceEnded && Input.GetKeyDown(KeyCode.Space))
         {
             StartCountdown();
         }
 
-        // 3. 玩家控制及游戏时钟（比赛未结束时）
+        // 3. Player control and game clock (if the race hasn't ended)
         if (canControlCar && !raceEnded)
         {
-            // 启动车辆控制脚本
+            // Enable vehicle control script
             if (playerCar != null)
             {
                 var controller = playerCar.GetComponent<CarController>();
@@ -158,20 +158,20 @@ public class GameManager : MonoBehaviour
                 }
             }
 
-            // 更新游戏时钟文本
+            // Update game clock text
             gameTime += Time.deltaTime;
             int minutes = Mathf.FloorToInt(gameTime / 60f);
             int seconds = Mathf.FloorToInt(gameTime % 60f);
             int milliseconds = Mathf.FloorToInt((gameTime * 1000f) % 1000f);
             gameTimeText.text = string.Format("{0:D2}:{1:D2}:{2:D3}", minutes, seconds, milliseconds);
 
-            // 显示当前圈数
+            // Display current lap count
             if (lapText != null)
             {
                 lapText.text = $"Lap: {raceManager.CurrentLap}/{raceManager.TotalLaps}";
             }
 
-            // 显示当前速度
+            // Display current speed
             if (speedText != null && carController != null)
             {
                 speedText.text = $"Speed: {carController.KPH:F2} km/h";
@@ -180,7 +180,7 @@ public class GameManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 重置并重新启动倒计时
+    /// Reset and restart the countdown
     /// </summary>
     void StartCountdown()
     {
@@ -191,7 +191,7 @@ public class GameManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 启动游戏时钟
+    /// Start the game timer
     /// </summary>
     void StartGameTimer()
     {
@@ -200,25 +200,25 @@ public class GameManager : MonoBehaviour
     }
 
     /// <summary>
-    /// RaceManager 通知比赛结束后调用此方法
+    /// Called when RaceManager notifies that the race is over
     /// </summary>
     private void HandleRaceEnd()
     {
-        Debug.Log("[GameManager] 收到比赛结束通知");
+        Debug.Log("[GameManager] Race end notification received");
 
-        // 标记比赛已结束
+        // Mark the race as ended
         raceEnded = true;
 
-        // 禁止玩家继续控制并关闭 CarController
+        // Disable player control and close the CarController
         canControlCar = false;
         if (playerCar != null)
         {
             var controller = playerCar.GetComponent<CarController>();
             if (controller != null)
-                controller.enabled = false;  // 停止玩家控制
+                controller.enabled = false;  // Stop player control
         }
 
-        // 禁止 AI 继续控制并关闭 CarController
+        // Disable AI control and close the CarController
         GameObject[] aiCars = GameObject.FindGameObjectsWithTag("AI");
         foreach (var aiCar in aiCars)
         {
@@ -226,27 +226,27 @@ public class GameManager : MonoBehaviour
             var aiinput = aiCar.GetComponent<AIInput>();
             if (aiController != null)
             {
-                aiController.enabled = false;  // 停止 AI 控制
+                aiController.enabled = false;  // Stop AI control
                 aiinput.enabled = false;
             }
         }
 
-        // 获取 AI 完成的圈数
+        // Get the number of laps completed by AI
         AICheckpointManager aiCheckpointManager = FindObjectOfType<AICheckpointManager>();
         if (aiCheckpointManager != null)
         {
-            int aiCrossCount = aiCheckpointManager.GetAiCrossCount(); // 获取 AI 完成的圈数
+            int aiCrossCount = aiCheckpointManager.GetAiCrossCount(); // Get the number of laps completed by AI
 
-            // 获取玩家的已完成圈数
+            // Get the number of laps completed by the player
             int playerCompletedLaps = raceManager.CurrentLap;
 
-            // 判断玩家和 AI 是否完成比赛，并显示相应信息
+            // Determine if the player and AI have completed the race and display appropriate information
             if (playerCompletedLaps >= raceManager.TotalLaps)
             {
-                // 如果 AI 完成比赛并且玩家完成比赛
+                // If both AI and the player completed the race
                 if (aiCrossCount >= raceManager.TotalLaps)
                 {
-                    // 玩家输了，显示失败消息
+                    // Player lost, show failure message
                     if (finishTimeText != null)
                     {
                         finishTimeText.text = $"You lost! Your time is {GetFormattedTime()}";
@@ -255,7 +255,10 @@ public class GameManager : MonoBehaviour
                 }
                 else
                 {
-                    // 玩家赢了，显示成功消息
+                    // Get the player's progress
+                    string selectedMap = PlayerPrefs.GetString("SelectedMap", "Map1");
+                    SaveManager.SaveProgress(selectedMap);  // Save current level progress
+                    // Player won, show success message
                     if (finishTimeText != null)
                     {
                         finishTimeText.text = $"You win! Your time is {GetFormattedTime()}";
@@ -265,14 +268,14 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        // 显示结束面板
+        // Show the finish panel
         if (finishPanel != null)
         {
             finishPanel.SetActive(true);
         }
     }
 
-    // 用于格式化时间的辅助函数
+    // Helper function to format time
     private string GetFormattedTime()
     {
         int minutes = Mathf.FloorToInt(gameTime / 60f);
@@ -281,7 +284,7 @@ public class GameManager : MonoBehaviour
         return $"{minutes:D2}:{seconds:D2}:{milliseconds:D3}";
     }
     /// <summary>
-    /// “再来一局” 按钮回调：重新加载当前场景
+    /// "Play Again" button callback: reload the current scene
     /// </summary>
     private void OnRestartButtonClicked()
     {
@@ -291,34 +294,34 @@ public class GameManager : MonoBehaviour
     }
 
     /// <summary>
-    /// “回主菜单” 按钮回调：加载主菜单场景
+    /// "Main Menu" button callback: load the main menu scene
     /// </summary>
     private void OnMainMenuButtonClicked()
     {
         if (!raceEnded) return;
-        // 假设主菜单场景名为 "MainMenu"
+        // Assuming the main menu scene is called "MainMenu"
         SceneManager.LoadScene("MainMenuScene");
     }
 
     private void OnDestroy()
     {
-        // 反注册比赛结束事件
+        // Unsubscribe from the race end event
         if (raceManager != null)
         {
             raceManager.OnRaceCompleted -= HandleRaceEnd;
         }
     }
-    // 启用 AI 控制
+    // Enable AI control
     void EnableAIControl()
     {
-        // 找到所有的 AI 车并启用它们的控制
+        // Find all AI vehicles and enable their control
         GameObject[] aiCars = GameObject.FindGameObjectsWithTag("AI");
         foreach (var aiCar in aiCars)
         {
             CarController aiCarController = aiCar.GetComponent<CarController>();
             if (aiCarController != null)
             {
-                aiCarController.enabled = true;  // 启用 AI 车的控制
+                aiCarController.enabled = true;  // Enable AI vehicle control
             }
         }
     }

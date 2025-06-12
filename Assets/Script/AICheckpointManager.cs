@@ -4,9 +4,9 @@ public class AICheckpointManager : MonoBehaviour
 {
     private RaceManager raceManager;
 
-    private GameObject[] aiCars;       // 存储 AI 车辆的引用
-    private int aiCrossCount = 0;   // 记录 AI 过终点的次数
-                                    // 在 AICheckpointManager 中添加方法
+    private GameObject[] aiCars;       // Store references to AI cars
+    private int aiCrossCount = 0;   // Track the number of times AI crosses the finish line
+                                    // Add method in AICheckpointManager
     public int GetAiCrossCount()
     {
         return aiCrossCount;
@@ -14,10 +14,10 @@ public class AICheckpointManager : MonoBehaviour
 
     void Start()
     {
-        // 获取 AI 车辆
+        // Get AI cars
         aiCars = GameObject.FindGameObjectsWithTag("AI");
 
-        // 自动查找 RaceManager 实例
+        // Automatically find the RaceManager instance
         if (raceManager == null)
         {
             raceManager = FindObjectOfType<RaceManager>();
@@ -34,16 +34,16 @@ public class AICheckpointManager : MonoBehaviour
 
     }
 
-    // 当 AI 车碰到终点区域时触发
+    // Triggered when AI car crosses the finish line area
     private void OnTriggerEnter(Collider other)
     {
-        // 检查是否是 AI 车辆经过终点
+        // Check if it's an AI car crossing the finish line
         if (other.CompareTag("AI"))
         {
             aiCrossCount++;
-            Debug.Log($"AI 经过终点次数: {aiCrossCount}");
+            Debug.Log($"AI crossed the finish line {aiCrossCount} times");
 
-            // 当 AI 达到 TotalLaps 时，停止 AI 控制
+            // Stop AI control when AI reaches TotalLaps
             if (aiCrossCount >= raceManager.TotalLaps)
             {
                 foreach (var aiCar in aiCars)
@@ -51,10 +51,10 @@ public class AICheckpointManager : MonoBehaviour
                     var aiController = aiCar.GetComponent<CarController>();
                     if (aiController != null)
                     {
-                        aiController.enabled = false;  // 停止 AI 控制
+                        aiController.enabled = false;  // Stop AI control
                     }
                 }
-                Debug.Log("AI 完成比赛，停止控制！");
+                Debug.Log("AI completed the race, stopping control!");
             }
         }
     }

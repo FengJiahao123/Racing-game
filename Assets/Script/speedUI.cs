@@ -3,8 +3,8 @@ using TMPro;
 
 public class VehicleUI : MonoBehaviour
 {
-    public CarController car; // 拖入车辆控制器
-    public TMP_Text speedText;          // 拖入 TextMeshPro 文本组件
+    public CarController car; 
+    public TMP_Text speedText;          
 
     void Update()
     {

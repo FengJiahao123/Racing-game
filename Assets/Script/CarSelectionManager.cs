@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 public class CarSelectionUI : MonoBehaviour
 {
-    public GameObject[] carDisplays; // 这两个是展示用车模型（不是用于比赛的 prefab）
+    public GameObject[] carDisplays; 
     public GameObject[] carDataPanels;
     private int currentIndex = 0;
 
@@ -32,12 +32,10 @@ public class CarSelectionUI : MonoBehaviour
             bool isCurrent = (i == currentIndex);
             carDisplays[i].SetActive(isCurrent);
 
-            // 控制旋转
             AutoRotate rotator = carDisplays[i].GetComponent<AutoRotate>();
             if (rotator != null)
                 rotator.SetSelected(isCurrent);
 
-            // 控制 UI 面板
             if (i < carDataPanels.Length)
                 carDataPanels[i].SetActive(isCurrent);
         }

@@ -4,29 +4,29 @@ public class CameraFollow : MonoBehaviour
 {
     public enum FollowMode
     {
-        SpringPhysics,  // 弹簧物理模拟（有惯性感）
-        SmoothDamp      // 平滑插值（更稳定）
+        SpringPhysics,  // Spring physics simulation (with inertia)
+        SmoothDamp      // Smooth interpolation (more stable)
     }
 
-    [Header("基础设置")]
-    public Transform target;                      // 玩家车辆的目标
-    public Vector3 offset = new Vector3(0, 3, -6); // 相机相对偏移
-    public FollowMode mode = FollowMode.SmoothDamp; // 跟随模式
+    [Header("Basic Settings")]
+    public Transform target;                      // Target player vehicle
+    public Vector3 offset = new Vector3(0, 3, -6); // Camera offset relative to the target
+    public FollowMode mode = FollowMode.SmoothDamp; // Follow mode
 
-    [Header("弹簧物理参数")]
-    public float springStrength = 20f;            // 弹力系数（建议15~25）
-    public float damping = 12f;                   // 阻尼系数（建议10~15）
-    private Vector3 physicsVelocity = Vector3.zero; // 物理速度
+    [Header("Spring Physics Parameters")]
+    public float springStrength = 20f;            // Spring strength (recommended range 15~25)
+    public float damping = 12f;                   // Damping coefficient (recommended range 10~15)
+    private Vector3 physicsVelocity = Vector3.zero; // Physics velocity
 
-    [Header("平滑插值参数")]
-    public float smoothTime = 0.1f;               // 平滑时间（越小跟随越快）
-    public float maxSpeed = Mathf.Infinity;       // 最大跟随速度
-    private Vector3 smoothVelocity = Vector3.zero; // 平滑速度
+    [Header("Smooth Interpolation Parameters")]
+    public float smoothTime = 0.1f;               // Smooth time (smaller values make the follow faster)
+    public float maxSpeed = Mathf.Infinity;       // Maximum follow speed
+    private Vector3 smoothVelocity = Vector3.zero; // Smooth velocity
 
-    [Header("旋转设置")]
-    public float rotationSmooth = 5f;             // 旋转平滑度
-    public bool lookAhead = true;                 // 是否预判车辆前方方向
-    public float lookAheadDistance = 2f;          // 预判距离
+    [Header("Rotation Settings")]
+    public float rotationSmooth = 5f;             // Rotation smoothness
+    public bool lookAhead = true;                 // Whether to predict the vehicle's forward direction
+    public float lookAheadDistance = 2f;          // Look ahead distance
 
     void Awake()
     {
@@ -36,17 +36,17 @@ public class CameraFollow : MonoBehaviour
 
     void Start()
     {
-        // 如果没有手动设置目标车辆，自动查找带 "Player" 标签的车辆
+        // If no target vehicle is manually set, automatically find the vehicle with the "Player" tag
         if (target == null)
         {
             GameObject player = GameObject.FindWithTag("Player");
             if (player != null)
             {
-                target = player.transform;  // 将目标设置为玩家选择的车辆
+                target = player.transform;  // Set the target to the player's selected vehicle
             }
         }
 
-        // 如果没有找到玩家车辆，输出警告
+        // If the player's vehicle is not found, output a warning
         if (target == null)
         {
             Debug.LogWarning("Player vehicle not found. Make sure the vehicle has 'Player' tag.");
@@ -55,16 +55,16 @@ public class CameraFollow : MonoBehaviour
 
     void LateUpdate()
     {
-        if (target == null) return;  // 如果没有目标，就退出更新
+        if (target == null) return;  // Exit update if there is no target
 
-        // 计算目标位置（包含偏移量）
+        // Calculate the target position (including offset)
         Vector3 desiredPosition = target.TransformPoint(offset);
 
-        // 根据模式更新相机位置
+        // Update camera position based on the selected mode
         switch (mode)
         {
             case FollowMode.SpringPhysics:
-                // 弹簧物理模拟（带惯性）
+                // Spring physics simulation (with inertia)
                 Vector3 displacement = desiredPosition - transform.position;
                 Vector3 springForce = displacement * springStrength;
                 Vector3 dampingForce = -physicsVelocity * damping;
@@ -73,7 +73,7 @@ public class CameraFollow : MonoBehaviour
                 break;
 
             case FollowMode.SmoothDamp:
-                // 平滑插值（更稳定）
+                // Smooth interpolation (more stable)
                 transform.position = Vector3.SmoothDamp(
                     transform.position,
                     desiredPosition,
@@ -85,11 +85,11 @@ public class CameraFollow : MonoBehaviour
                 break;
         }
 
-        // 计算目标旋转方向
+        // Calculate the target rotation direction
         Vector3 lookDirection = target.forward;
         if (lookAhead)
         {
-            // 预判车辆前方方向（减少急转弯时的镜头滞后）
+            // Predict the vehicle's forward direction (reduces camera lag during sharp turns)
             lookDirection = (target.position + target.forward * lookAheadDistance) - transform.position;
         }
 
@@ -103,7 +103,7 @@ public class CameraFollow : MonoBehaviour
 
     void OnEnable()
     {
-        // 初始化相机位置和速度
+        // Initialize camera position and velocity
         if (target != null)
         {
             transform.position = target.TransformPoint(offset);
@@ -113,7 +113,7 @@ public class CameraFollow : MonoBehaviour
         }
     }
 
-    // 调试辅助：在Scene窗口显示跟随偏移
+    // Debug helper: Display the follow offset in the Scene window
     void OnDrawGizmosSelected()
     {
         if (target != null)

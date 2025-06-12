@@ -2,74 +2,74 @@ using UnityEngine;
 
 public class WheelColliderAligner : MonoBehaviour
 {
-    [Header("拖入引用")]
-    public GameObject wheelModel;  // 轮子的3D模型（必须有MeshRenderer）
-    public WheelCollider wheelCollider; // 对应的WheelCollider
+    [Header("Drag References")]
+    public GameObject wheelModel;  // 3D model of the wheel (must have MeshRenderer)
+    public WheelCollider wheelCollider; // Corresponding WheelCollider
 
-    [Header("调试选项")]
-    public bool showDebugGizmos = true; // 显示调试球
-    public Color modelCenterColor = Color.green; // 轮子模型中心颜色
-    public Color colliderPosColor = Color.red;   // WheelCollider位置颜色
+    [Header("Debug Options")]
+    public bool showDebugGizmos = true; // Show debug sphere
+    public Color modelCenterColor = Color.green; // Color for the wheel model center
+    public Color colliderPosColor = Color.red;   // Color for the WheelCollider position
 
-    private bool hasBeenAligned = false; // 标记是否已进行过对齐
+    private bool hasBeenAligned = false; // Flag to indicate if alignment has been done
 
-    // 在开始时进行对齐计算
+    // Perform alignment calculation on start
     void Start()
     {
-        AlignWheelCollider(); // 在开始时调用一次对齐函数
+        AlignWheelCollider(); // Call alignment function once on start
     }
 
-    // 只在初始化时计算一次，避免每帧都更新
+    // Only calculate once on initialization to avoid updating every frame
     void AlignWheelCollider()
     {
         if (wheelModel == null || wheelCollider == null) return;
 
-        // 获取轮子模型的精确几何中心（世界坐标）
+        // Get the exact geometric center of the wheel model (world coordinates)
         Renderer renderer = wheelModel.GetComponent<Renderer>();
         if (renderer == null)
         {
-            Debug.LogError("轮子模型缺少MeshRenderer！");
+            Debug.LogError("Wheel model is missing MeshRenderer!");
             return;
         }
 
         Bounds bounds = renderer.bounds;
         Vector3 modelWorldCenter = bounds.center;
 
-        // 计算WheelCollider应有的本地中心点（综合考虑悬挂距离的影响）
+        // Calculate the local center point of the WheelCollider (considering suspension distance)
         Vector3 colliderCenter = wheelCollider.transform.InverseTransformPoint(modelWorldCenter);
 
-        // 使用正值来修正Y轴偏移，使得WheelCollider的位置与模型几何中心对齐
-        colliderCenter.y = colliderCenter.y + wheelCollider.suspensionDistance / 2f; // 修正Y轴值
+        // Use positive value to fix Y-axis offset so that the WheelCollider's position aligns with the model's geometric center
+        colliderCenter.y = colliderCenter.y + wheelCollider.suspensionDistance / 2f; // Fix Y-axis value
 
-        // 修复：确保 x 和 z 坐标对齐，避免偏移
-        colliderCenter.x = Mathf.Round(colliderCenter.x * 100f) / 100f; // 保留两位小数
-        colliderCenter.z = Mathf.Round(colliderCenter.z * 100f) / 100f; // 保留两位小数
+        // Fix: Ensure x and z coordinates are aligned to avoid offset
+        colliderCenter.x = Mathf.Round(colliderCenter.x * 100f) / 100f; // Round to two decimal places
+        colliderCenter.z = Mathf.Round(colliderCenter.z * 100f) / 100f; // Round to two decimal places
 
-        // 应用修正后的Center
+        // Apply the corrected center
         wheelCollider.center = colliderCenter;
 
-        // 自动计算完美半径（取模型高度作为半径）
-        wheelCollider.radius = Mathf.Round(bounds.extents.y * 100f) / 100f; // 保留两位小数
+        // Automatically calculate perfect radius (use model height as radius)
+        wheelCollider.radius = Mathf.Round(bounds.extents.y * 100f) / 100f; // Round to two decimal places
 
-        hasBeenAligned = true; // 对齐完成后标记
+        hasBeenAligned = true; // Mark as aligned after completion
     }
 
-    // 如果需要可以通过按钮或其他条件重新计算对齐
+    // If necessary, the alignment can be recalculated through a button or other conditions
     void OnValidate()
     {
-        // 如果脚本中有需要重新对齐的条件（例如手动修改了属性）
+        // Re-align if necessary (for example, if properties were manually modified)
         if (!hasBeenAligned)
         {
-            AlignWheelCollider(); // 仅在尚未对齐时进行对齐
+            AlignWheelCollider(); // Align only if not yet aligned
         }
     }
 
-    // 绘制调试信息
+    // Draw debug information
     void OnDrawGizmos()
     {
         if (!showDebugGizmos || wheelModel == null || wheelCollider == null) return;
 
-        // 绘制轮子模型中心（绿色）
+        // Draw the wheel model center (green)
         Renderer renderer = wheelModel.GetComponent<Renderer>();
         if (renderer != null)
         {
@@ -77,12 +77,12 @@ public class WheelColliderAligner : MonoBehaviour
             Gizmos.DrawSphere(renderer.bounds.center, 0.03f);
         }
 
-        // 绘制WheelCollider实际位置（红色）
+        // Draw the WheelCollider's actual position (red)
         wheelCollider.GetWorldPose(out Vector3 colliderPos, out Quaternion _);
         Gizmos.color = colliderPosColor;
         Gizmos.DrawSphere(colliderPos, 0.03f);
 
-        // 绘制连线（方便查看偏移）
+        // Draw the connecting line (for easy offset viewing)
         Gizmos.color = Color.white;
         Gizmos.DrawLine(renderer.bounds.center, colliderPos);
     }
